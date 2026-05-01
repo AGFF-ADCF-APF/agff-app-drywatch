@@ -1,0 +1,47 @@
+name: Deploy By Branch
+
+on:
+  push:
+    branches: [staging, main]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Target environment"
+        required: true
+        default: "staging"
+        type: choice
+        options:
+          - staging
+          - production
+
+env:
+  APP_DIR: /opt/agff-apps/agff-app-drycontrol
+
+jobs:
+  deploy-staging:
+    if: github.ref_name == 'staging' || (github.event_name == 'workflow_dispatch' && inputs.target == 'staging')
+    runs-on: self-hosted
+    steps:
+      - name: Deploy staging
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$APP_DIR"
+          git fetch --all --prune
+          git checkout staging
+          git pull --ff-only origin staging
+          docker compose up -d --build
+
+  deploy-production:
+    if: github.ref_name == 'main' || (github.event_name == 'workflow_dispatch' && inputs.target == 'production')
+    runs-on: self-hosted
+    steps:
+      - name: Deploy production
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$APP_DIR"
+          git fetch --all --prune
+          git checkout main
+          git pull --ff-only origin main
+          docker compose up -d --build

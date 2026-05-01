@@ -1,0 +1,54 @@
+name: Branch Flow Guard
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+    branches: [main, staging, develop]
+
+jobs:
+  validate-flow:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate branch flow
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="${{ github.base_ref }}"
+          HEAD="${{ github.head_ref }}"
+
+          echo "Base: $BASE"
+          echo "Head: $HEAD"
+
+          # Allowed flow:
+          # feature/* -> develop
+          # develop -> staging
+          # staging -> main
+          # hotfix/* -> main
+          if [[ "$BASE" == "main" ]]; then
+            if [[ "$HEAD" == "staging" || "$HEAD" == hotfix/* ]]; then
+              echo "OK: $HEAD -> main"
+              exit 0
+            fi
+            echo "ERROR: To main only 'staging' or 'hotfix/*' is allowed."
+            exit 1
+          fi
+
+          if [[ "$BASE" == "staging" ]]; then
+            if [[ "$HEAD" == "develop" ]]; then
+              echo "OK: develop -> staging"
+              exit 0
+            fi
+            echo "ERROR: To staging only 'develop' is allowed."
+            exit 1
+          fi
+
+          if [[ "$BASE" == "develop" ]]; then
+            if [[ "$HEAD" == feature/* || "$HEAD" == bugfix/* || "$HEAD" == chore/* ]]; then
+              echo "OK: feature/bugfix/chore -> develop"
+              exit 0
+            fi
+            echo "ERROR: To develop only feature/*, bugfix/* or chore/* is allowed."
+            exit 1
+          fi
+
+          echo "No special rule for this target."

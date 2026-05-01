@@ -80,6 +80,41 @@ Empfehlung:
 - Test-URL nur von `staging` deployen
 - Produktiv-URL nur von `main` deployen
 
+Automatisierung ist vorbereitet:
+
+- `.github/workflows/branch-flow-guard.yml`
+- `.github/workflows/deploy-by-branch.yml`
+
+Die Deploy-Workflows laufen auf `self-hosted` Runnern.
+
+## GitHub Branch-Schutz (einmalig in GitHub klicken)
+
+In GitHub beim Repo:
+
+1. `Settings` -> `Branches` -> `Add branch protection rule`
+2. Regel für `main` erstellen:
+	- Require a pull request before merging = EIN
+	- Require status checks to pass = EIN
+	- Statuscheck `Branch Flow Guard / validate-flow` auswählen
+	- Optional: Include administrators = EIN
+3. Regel für `staging` genauso erstellen
+4. Regel für `develop` genauso erstellen
+
+Damit kann niemand direkt unsauber in die Ziel-Branches mergen.
+
+## Self-Hosted Runner (für Auto-Deploy)
+
+Kurz erklärt: Der Runner ist ein kleiner Dienst auf deinem Server, der GitHub-Workflows lokal ausführt.
+
+Grobe Schritte:
+
+1. GitHub: `Settings` -> `Actions` -> `Runners` -> `New self-hosted runner`
+2. Linux-Befehle von GitHub auf dem Zielserver ausführen
+3. Runner als Service installieren/starten
+4. Danach deployt GitHub automatisch:
+	- Push auf `staging` -> Staging-Deploy
+	- Push auf `main` -> Produktiv-Deploy
+
 ## Rollback in 1 Minute
 
 Wenn ein Release Probleme macht:
