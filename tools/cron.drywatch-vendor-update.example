@@ -1,0 +1,3 @@
+# Run as user with docker permission (e.g. dev)
+# Every Monday at 03:17
+17 3 * * 1 cd /opt/agff-apps/agff-app-drycontrol && ./tools/update_vendor.sh >> /opt/agff-apps/agff-app-drycontrol/logs/vendor-update.log 2>&1

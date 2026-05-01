@@ -1,0 +1,37 @@
+services:
+  drycalc:
+    build: .
+    container_name: agff-drycalc
+    restart: unless-stopped
+    networks:
+      - web-netzwerk
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.drywatch-slash.rule=Host(`apps.graswachstum.ch`) && Path(`/drywatch`)"
+      - "traefik.http.routers.drywatch-slash.entrypoints=web"
+      - "traefik.http.routers.drywatch-slash.middlewares=drywatch-add-slash"
+      - "traefik.http.routers.drywatch-slash.service=drycalc"
+      - "traefik.http.middlewares.drywatch-add-slash.redirectregex.regex=^https?://apps\\.graswachstum\\.ch/drywatch$"
+      - "traefik.http.middlewares.drywatch-add-slash.redirectregex.replacement=https://apps.graswachstum.ch/drywatch/"
+      - "traefik.http.middlewares.drywatch-add-slash.redirectregex.permanent=true"
+      - "traefik.http.routers.drywatch.rule=Host(`apps.graswachstum.ch`) && PathPrefix(`/drywatch/`)"
+      - "traefik.http.routers.drywatch.entrypoints=web"
+      - "traefik.http.middlewares.drywatch-strip.stripprefix.prefixes=/drywatch"
+      - "traefik.http.routers.drywatch.middlewares=drywatch-strip"
+      - "traefik.http.services.drycalc.loadbalancer.server.port=80"
+      - "traefik.http.routers.drycalc-slash.rule=Host(`apps.graswachstum.ch`) && Path(`/drycalc`)"
+      - "traefik.http.routers.drycalc-slash.entrypoints=web"
+      - "traefik.http.routers.drycalc-slash.middlewares=drycalc-add-slash"
+      - "traefik.http.routers.drycalc-slash.service=drycalc"
+      - "traefik.http.middlewares.drycalc-add-slash.redirectregex.regex=^https?://apps\\.graswachstum\\.ch/drycalc$"
+      - "traefik.http.middlewares.drycalc-add-slash.redirectregex.replacement=https://apps.graswachstum.ch/drycalc/"
+      - "traefik.http.middlewares.drycalc-add-slash.redirectregex.permanent=true"
+      - "traefik.http.routers.drycalc.rule=Host(`apps.graswachstum.ch`) && PathPrefix(`/drycalc/`)"
+      - "traefik.http.routers.drycalc.entrypoints=web"
+      - "traefik.http.routers.drycalc.middlewares=drycalc-strip"
+      - "traefik.http.routers.drycalc.service=drycalc"
+      - "traefik.http.middlewares.drycalc-strip.stripprefix.prefixes=/drycalc"
+
+networks:
+  web-netzwerk:
+    external: true

@@ -1,0 +1,9 @@
+RewriteEngine On
+
+# REST endpoint without .php suffix
+RewriteRule ^api/evaporation$ api/evaporation.php [L,QSA]
+
+# Default app entry
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.php [L]

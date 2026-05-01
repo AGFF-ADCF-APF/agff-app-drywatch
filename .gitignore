@@ -1,0 +1,25 @@
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+
+# Local runtime data
+logs/
+tmp/
+*.log
+
+# Secrets / local config
+.env
+.env.*
+!.env.example
+
+# Build/cache
+node_modules/
+vendor/
+dist/
+build/
+coverage/
+
+# Python cache (if helper scripts are used)
+__pycache__/
+*.pyc
