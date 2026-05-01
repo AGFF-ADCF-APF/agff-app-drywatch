@@ -12,6 +12,20 @@ Wir trennen die Arbeit in drei Stufen:
 
 So kann man neue Funktionen testen, bevor sie live gehen.
 
+## Docker-Compose und Sicherheit
+
+Ja, `docker-compose.yml` soll in Git bleiben.
+
+Wichtig:
+
+- Infrastruktur-Definition in Git: JA
+- Secrets (Passwörter, API-Keys, Tokens) in Git: NEIN
+
+Deshalb:
+
+- Nutze `.env`-Dateien pro Umgebung (`deploy/*.env`), diese sind lokal.
+- Nur Beispiel-Dateien (`*.env.example`) liegen im Repo.
+
 ## Branch-Regeln (einfach)
 
 - Neue Aufgabe: Branch von `develop`, z. B. `feature/suche-info-wissen`
@@ -79,6 +93,37 @@ Empfehlung:
 
 - Test-URL nur von `staging` deployen
 - Produktiv-URL nur von `main` deployen
+
+### Parallel auf einem Server deployen
+
+Dateien im Repo:
+
+- `deploy/main.env.example`
+- `deploy/staging.env.example`
+- `deploy/develop.env.example`
+- `tools/deploy_stack.sh`
+
+Einmalig vorbereiten:
+
+```bash
+cp deploy/main.env.example deploy/main.env
+cp deploy/staging.env.example deploy/staging.env
+cp deploy/develop.env.example deploy/develop.env
+```
+
+Deploy je Stufe:
+
+```bash
+./tools/deploy_stack.sh main
+./tools/deploy_stack.sh staging
+./tools/deploy_stack.sh develop
+```
+
+Die Stufen laufen parallel, weil jede Stufe eigene Werte hat:
+
+- eigener Containername
+- eigener Traefik-Routername
+- eigener URL-Pfad (`/drywatch`, `/drywatch-staging`, `/drywatch-dev`)
 
 Automatisierung ist vorbereitet:
 
