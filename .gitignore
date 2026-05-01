@@ -23,3 +23,5 @@ coverage/
 # Python cache (if helper scripts are used)
 __pycache__/
 *.pyc
+
+.Rhistory
