@@ -40,6 +40,11 @@
         .p-box { transition: all 0.2s; border-width: 2px; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .p-box.active { border-color: #3b82f6; background-color: white; opacity: 1; transform: scale(1.02); z-index: 10; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
         .p-box.inactive { border-color: transparent; background-color: #e2e8f0; opacity: 0.6; transform: scale(0.98); cursor: pointer; }
+        @keyframes attention-blink { 0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); } 50% { box-shadow: 0 0 0 5px rgba(239,68,68,0.28); } }
+        .attention-blink { animation: attention-blink 1.2s ease-in-out infinite; }
+        .aero-live-locked { opacity: 0.75; border-color: #fcd34d; background: #fffbeb; }
+        .aero-live-locked > summary { pointer-events: none; background: #fef3c7; color: #92400e; }
+        .aero-live-locked > summary::after { content: 'gesperrt'; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.04em; }
 
         /* Fan Search Dropdown */
         .search-results {
@@ -56,6 +61,27 @@
         details > summary::after { content: '+'; color: #64748b; font-weight: bold; }
         details[open] > summary::after { content: '-'; }
         details[open] > summary { margin-bottom: 0; border-bottom-left-radius: 0; border-bottom-right-radius: 0; background: #e2e8f0; }
+        .knowledge-article-warning > summary {
+            background: #fff1f2;
+            border: 2px solid #ef4444;
+            color: #991b1b;
+        }
+        .knowledge-article-warning > summary::before {
+            content: '⚠';
+            display: inline-block;
+            margin-right: 8px;
+            font-size: 1rem;
+            line-height: 1;
+        }
+        .knowledge-article-warning[open] > summary {
+            background: #ffe4e6;
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+        .knowledge-article-warning > .details-content {
+            border-color: #fda4af;
+            background: #fffaf9;
+        }
         .details-content { padding: 10px; border: 1px solid #e2e8f0; border-top: none; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px; font-size: 0.8rem; line-height: 1.4; color: #334155; }
         .knowledge-md p { margin: 6px 0; }
         .knowledge-md ul, .knowledge-md ol { margin: 6px 0; }
@@ -85,7 +111,10 @@
         .rec-banner .detail-box { width: 100%; margin-top: 8px; margin-bottom: 0; border: 1px solid #bfdbfe; border-radius: 12px; background: rgba(255,255,255,0.78); padding: 12px; }
         .check-tab { flex: 1; border: 1px solid #cbd5e1; background: #f8fafc; color: #475569; border-radius: 10px; padding: 10px 12px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
         .check-tab.active { background: #0f766e; border-color: #0f766e; color: white; box-shadow: 0 4px 12px rgba(15,118,110,0.22); }
-        .chart-fs { position: fixed !important; top: 0; left: 0; right: 0; bottom: 0; z-index: 1000; background: white; padding: 20px; display: flex; flex-direction: column; }
+        .chart-fs { position: fixed !important; top: 0; left: 0; right: 0; bottom: 0; z-index: 1000; background: white; padding: 16px; display: flex; flex-direction: column; }
+        .hx-fs-only { display: none; }
+        .chart-fs .hx-fs-only { display: inline-flex; }
+        .chart-fs .hx-chart-wrap { flex: 1 !important; max-width: 100% !important; aspect-ratio: unset !important; padding-bottom: 0 !important; width: 100% !important; }
         
         dialog { border-radius: 16px; border: none; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); width: 95vw; max-width: 600px; margin: auto; height: auto; max-height: 90vh; }
         dialog:not([open]) { display: none !important; }
@@ -102,9 +131,11 @@
             overflow-x: auto;
             overflow-y: hidden;
             -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
         }
         .history-inner {
-            height: 100%;
+            display: block;
+            height: 100% !important;
             min-width: 380px;
             margin-left: auto;
             margin-right: auto;

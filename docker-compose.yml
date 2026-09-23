@@ -1,14 +1,15 @@
 services:
   drycalc:
     build: .
-    container_name: ${DRYWATCH_CONTAINER_NAME:-agff-drycalc}
+    container_name: ${DRYWATCH_CONTAINER_NAME:-agff-drywatch}
     restart: unless-stopped
     networks:
       - web-netzwerk
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.${DRYWATCH_STACK:-drywatch}.rule=Host(`${DRYWATCH_HOST:-apps.graswachstum.ch}`) && (Path(`${DRYWATCH_BASE_PATH:-/drywatch}`) || PathPrefix(`${DRYWATCH_BASE_PATH:-/drywatch}/`))"
-      - "traefik.http.routers.${DRYWATCH_STACK:-drywatch}.entrypoints=web"
+      - "traefik.http.routers.${DRYWATCH_STACK:-drywatch}.rule=Host(`${DRYWATCH_HOST:-apps.graswachstum.ch}`) && (Path(`${DRYWATCH_BASE_PATH:-/drywatch}`) || PathPrefix(`${DRYWATCH_BASE_PATH:-/drywatch}/`) || PathPrefix(`/assets/`) || Path(`/Heutrocknung_Wassermenge_pro_1000kg_Heu.png`) || Path(`/Prozesse_Selbsterhitzung_Heu_Philipsen_1965.png`))"
+      - "traefik.http.routers.${DRYWATCH_STACK:-drywatch}.tls.certresolver=le-http"
+      - "traefik.http.routers.${DRYWATCH_STACK:-drywatch}.entrypoints=websecure"
       - "traefik.http.middlewares.${DRYWATCH_STACK:-drywatch}-strip.stripprefix.prefixes=${DRYWATCH_BASE_PATH:-/drywatch}"
       - "traefik.http.routers.${DRYWATCH_STACK:-drywatch}.middlewares=${DRYWATCH_STACK:-drywatch}-strip"
       - "traefik.http.services.drycalc.loadbalancer.server.port=80"

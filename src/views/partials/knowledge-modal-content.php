@@ -18,17 +18,37 @@ natsort($knowledgeFiles);
 $knowledgeFiles = array_values($knowledgeFiles);
 
 if (!function_exists('knowledge_md_safe_url')) {
-    function knowledge_md_safe_url($url)
+    function knowledge_md_safe_url($url, $basePath = '')
     {
         $url = trim($url);
         if ($url === '') {
             return '#';
         }
 
+        if (preg_match('/^(#|mailto:|tel:|data:)/i', $url) === 1) {
+            return $url;
+        }
+
         $isHttp = preg_match('#^https?://[^\s]+$#', $url) === 1;
         $isLocal = preg_match('#^(/|\./|\.\./)?[A-Za-z0-9_./\-%+]+$#', $url) === 1;
         $allowed = $isHttp || $isLocal;
-        return $allowed ? $url : '#';
+        if (!$allowed) {
+            return '#';
+        }
+
+        if ($isHttp) {
+            return $url;
+        }
+
+        if ($basePath === '') {
+            return $url;
+        }
+
+        if ($url[0] === '/') {
+            return $basePath . $url;
+        }
+
+        return $basePath . '/' . ltrim($url, './');
     }
 }
 
@@ -44,7 +64,8 @@ if (!function_exists('knowledge_md_inline')) {
             '/\[([^\]]+)\]\(([^\)]+)\)/',
             static function ($matches) {
                 $label = $matches[1];
-                $url = knowledge_md_safe_url($matches[2]);
+                global $drywatchBasePath;
+                $url = knowledge_md_safe_url($matches[2], is_string($drywatchBasePath ?? null) ? $drywatchBasePath : '');
                 return '<a href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '" target="_blank" rel="noopener noreferrer" class="text-blue-700 underline">' . $label . '</a>';
             },
             $safe
@@ -61,6 +82,8 @@ if (!function_exists('knowledge_md_to_html')) {
         $html = [];
         $inUl = false;
         $inOl = false;
+        $inTable = false;
+        $tableRows = [];
 
         $closeLists = static function () use (&$html, &$inUl, &$inOl) {
             if ($inUl) {
@@ -73,11 +96,53 @@ if (!function_exists('knowledge_md_to_html')) {
             }
         };
 
+        $closeTable = static function () use (&$html, &$inTable, &$tableRows) {
+            if (!$inTable) {
+                return;
+            }
+            $html[] = '<div class="overflow-x-auto my-2"><table class="text-[10px] border-collapse w-full">';
+            $isHeader = true;
+            foreach ($tableRows as $rowLine) {
+                if (preg_match('/^\|[\s\-\|:]+\|$/', $rowLine)) {
+                    continue;
+                }
+                $cells = array_map('trim', explode('|', trim($rowLine, '|')));
+                if ($isHeader) {
+                    $html[] = '<thead><tr class="bg-slate-100 text-left">';
+                    foreach ($cells as $cell) {
+                        $html[] = '<th class="border border-slate-200 px-1.5 py-0.5 font-bold whitespace-nowrap">' . knowledge_md_inline($cell) . '</th>';
+                    }
+                    $html[] = '</tr></thead><tbody>';
+                    $isHeader = false;
+                } else {
+                    $html[] = '<tr class="even:bg-slate-50">';
+                    foreach ($cells as $cell) {
+                        $html[] = '<td class="border border-slate-200 px-1.5 py-0.5">' . knowledge_md_inline($cell) . '</td>';
+                    }
+                    $html[] = '</tr>';
+                }
+            }
+            $html[] = '</tbody></table></div>';
+            $inTable = false;
+            $tableRows = [];
+        };
+
         foreach ($lines as $line) {
             $trimmed = trim($line);
 
+            if ($inTable && ($trimmed === '' || $trimmed[0] !== '|')) {
+                $closeTable();
+            }
+
             if ($trimmed === '') {
                 $closeLists();
+                continue;
+            }
+
+            if ($trimmed[0] === '|' && substr($trimmed, -1) === '|') {
+                $closeLists();
+                $inTable = true;
+                $tableRows[] = $trimmed;
                 continue;
             }
 
@@ -108,7 +173,7 @@ if (!function_exists('knowledge_md_to_html')) {
             if (preg_match('/^!\[([^\]]*)\]\(([^\)]+)\)$/', $trimmed, $matches) === 1) {
                 $closeLists();
                 $imgAlt = htmlspecialchars($matches[1], ENT_QUOTES, 'UTF-8');
-                $imgSrc = htmlspecialchars(knowledge_md_safe_url($matches[2]), ENT_QUOTES, 'UTF-8');
+                $imgSrc = htmlspecialchars(knowledge_md_safe_url($matches[2], is_string($drywatchBasePath ?? null) ? $drywatchBasePath : ''), ENT_QUOTES, 'UTF-8');
                 $html[] = '<img src="' . $imgSrc . '" alt="' . $imgAlt . '" class="w-full mt-2 rounded border border-slate-200">';
                 continue;
             }
@@ -144,6 +209,7 @@ if (!function_exists('knowledge_md_to_html')) {
         }
 
         $closeLists();
+        $closeTable();
 
         return implode("\n", $html);
     }
@@ -168,6 +234,7 @@ foreach ($knowledgeFiles as $filePath) {
     }
 
     $baseName = strtolower(basename($filePath));
+    $isDangerArticle = (strpos($baseName, '04-einlagerung-gefahren') === 0);
     if ($phaseMarkdown === '' && (strpos($baseName, '01-') === 0 || strpos($baseName, 'phasen') !== false)) {
         $phaseMarkdown = $markdown;
     }
@@ -176,6 +243,7 @@ foreach ($knowledgeFiles as $filePath) {
         'file_name' => basename($filePath),
         'summary' => $summary,
         'html' => knowledge_md_to_html($markdown),
+        'is_danger' => $isDangerArticle,
     ];
 }
 
@@ -233,7 +301,8 @@ if (count($knowledgeArticles) === 0) {
     foreach ($knowledgeArticles as $article) {
         $openAttr = (strpos(strtolower($article['file_name']), 'merkbla') !== false) ? ' open' : '';
         $articleId = 'knowledge-' . strtolower(preg_replace('/[^a-z0-9]+/i', '-', basename($article['file_name'], '.md')));
-        echo '<details class="knowledge-article" id="' . htmlspecialchars($articleId, ENT_QUOTES, 'UTF-8') . '"' . $openAttr . '>';
+        $dangerClass = !empty($article['is_danger']) ? ' knowledge-article-warning' : '';
+        echo '<details class="knowledge-article' . $dangerClass . '" id="' . htmlspecialchars($articleId, ENT_QUOTES, 'UTF-8') . '"' . $openAttr . '>';
         echo '<summary>' . htmlspecialchars($article['summary'], ENT_QUOTES, 'UTF-8') . '</summary>';
         echo '<div class="details-content knowledge-md">' . $article['html'] . '</div>';
         echo '</details>';

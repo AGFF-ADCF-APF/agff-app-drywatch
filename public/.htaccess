@@ -1,5 +1,18 @@
 RewriteEngine On
 
+# Korrekte MIME-Types für statische Assets
+AddType text/css .css
+AddType application/javascript .js
+AddType image/png .png
+AddType image/jpeg .jpg .jpeg
+AddType image/svg+xml .svg
+AddType font/woff2 .woff2
+AddType font/woff .woff
+AddType font/ttf .ttf
+AddType application/json .json
+AddType application/font-woff .woff
+AddType application/font-woff2 .woff2
+
 # REST endpoint without .php suffix
 RewriteRule ^api/evaporation$ api/evaporation.php [L,QSA]
 

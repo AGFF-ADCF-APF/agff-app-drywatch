@@ -125,6 +125,39 @@ Die Stufen laufen parallel, weil jede Stufe eigene Werte hat:
 - eigener Traefik-Routername
 - eigener URL-Pfad (`/drywatch`, `/drywatch-staging`, `/drywatch-dev`)
 
+### 30-Sekunden Betriebs-Checkliste
+
+Schnellstart je Stufe:
+
+1. Branch prüfen:
+```bash
+git branch --show-current
+```
+Soll sein: `develop`, `staging` oder `main`.
+
+2. Deploy starten:
+```bash
+./tools/deploy_stack.sh develop
+./tools/deploy_stack.sh staging
+./tools/deploy_stack.sh main
+```
+Nur den Befehl für die gewünschte Stufe ausführen.
+
+3. Kurz prüfen, ob Container läuft:
+```bash
+docker ps --format "table {{.Names}}\t{{.Status}}" | grep agff-drywatch
+```
+
+4. URL testen:
+- develop: `/drywatch-dev/`
+- staging: `/drywatch-staging/`
+- main: `/drywatch/`
+
+5. Bei Problemen schnell neu bauen:
+```bash
+./tools/deploy_stack.sh <main|staging|develop>
+```
+
 Automatisierung ist vorbereitet:
 
 - `.github/workflows/branch-flow-guard.yml`
