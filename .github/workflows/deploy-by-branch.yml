@@ -15,7 +15,9 @@ on:
           - production
 
 env:
-  APP_DIR: /opt/agff-apps/agff-app-drycontrol
+  # Ausrolleverzeichnis auf dem Docker-Host (LXC 103, 192.168.0.73).
+  # Umbenannt am 2026-09-23: frueher agff-app-drycontrol unter /opt/agff-apps.
+  APP_DIR: /opt/stacks/agff-apps/agff-drywatch
 
 jobs:
   deploy-staging:
