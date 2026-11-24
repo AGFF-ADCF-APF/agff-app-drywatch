@@ -25,8 +25,11 @@ if ($drywatchBasePath === '/') {
     <script src="<?= htmlspecialchars($drywatchBasePath, ENT_QUOTES, 'UTF-8') ?>/assets/vendor/chartjs-plugin-datalabels.min.js"></script>
     <link rel="stylesheet" href="<?= htmlspecialchars($drywatchBasePath, ENT_QUOTES, 'UTF-8') ?>/assets/css/tailwind.generated.css">
     <link rel="stylesheet" href="<?= htmlspecialchars($drywatchBasePath, ENT_QUOTES, 'UTF-8') ?>/assets/css/app.css">
-    <!-- Gemeinsame AGFF-Mediathek (Liste und Skript in der App futter, gleicher Host) -->
+    <?php /* AGFF-Mediathek vorläufig deaktiviert (2026-11): futter ist nach app.graswachstum.ch umgezogen, drywatch noch nicht.
+       Von einem fremden Ursprung lässt sich die Liste nicht laden. Wieder einschalten mit Kopie der Dateien oder nach dem Umzug,
+       siehe futter docs/PORTIERUNG-ALL-INKL.md, Abschnitt 6. Gegenstück in app-content.php («Videos»).
     <link rel="stylesheet" href="/futter/v2/assets/mediathek.css">
     <script src="/futter/v2/assets/mediathek.js" defer></script>
+    */ ?>
 </head>
 <body class="pb-24">

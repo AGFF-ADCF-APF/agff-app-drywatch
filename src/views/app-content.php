@@ -769,10 +769,12 @@
                     placeholder="Volltextsuche in Info & Wissen..."
                     oninput="filterKnowledgeArticles(this.value)">
             </div>
+            <?php /* AGFF-Mediathek vorläufig deaktiviert, siehe head.php
             <div data-agm-rahmen hidden>
                 <h4 class="label-sm text-slate-400 mb-2">Videos</h4>
                 <div data-agff-mediathek data-app="drywatch" data-themen="heu,belueftung,trocknung,anwelken"></div>
             </div>
+            */ ?>
             <h4 class="label-sm text-slate-400 mb-2" data-i18n="phases.knowledge_base">Wissensdatenbank</h4>
             <div id="knowledge-list">
                 <!-- Inhalte werden aus src/knowledge/*.md geladen. -->
