@@ -329,3 +329,38 @@
         .footer-lang-btn { padding: 3px 10px; border-radius: 9999px; border: 1px solid #e2e8f0; font-size: 10px; font-weight: 800; color: #94a3b8; background: #f8fafc; transition: background 0.15s, color 0.15s; }
         .footer-lang-btn:hover { background: #e2e8f0; color: #475569; }
         .footer-lang-btn.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+
+        /* Handy (≤400 px): Luftzeilen und Luftmenge umbrechen statt über den Rand laufen.
+           Luftzeile: Beschriftung mit Knopf als eigene Zeile oben, darunter die zwei Stepper je halbe Breite. */
+        @media (max-width: 400px) {
+            .luft-zeile { flex-wrap: wrap; row-gap: 6px; }
+            .luft-zeile > :first-child { width: 100%; display: flex; align-items: center; gap: 8px; }
+            .luft-zeile > :first-child > button { width: auto; min-width: 96px; height: 32px; flex-direction: row; gap: 4px; padding: 0 10px; }
+            .luft-zeile > :first-child > button span { margin-top: 0; }
+            .luft-zeile > :first-child > label { min-height: 32px; }
+            .luft-zeile > :not(:first-child) { flex: 1 1 0; min-width: 0; justify-content: space-between; }
+            .luft-zeile .val-input { width: 100%; min-width: 36px; }
+            .luft-zeile .stepper-btn { flex: none; }
+            .luft-zeile > :not(:first-child) > .text-center { flex: 1 1 auto; min-width: 0; }
+
+            .luftmenge-zeile { flex-wrap: wrap; overflow: visible; white-space: normal; row-gap: 6px; }
+            .luftmenge-zeile > :first-child { flex: 1 0 100%; display: flex; align-items: baseline; justify-content: center; gap: 6px; }
+            .luftmenge-zeile > :not(:first-child) { flex: 1 1 0; min-width: 0; }
+            .luftmenge-zeile > :not(:first-child) > :last-child { width: 100%; justify-content: space-between; }
+        }
+
+        /* Kopf ≤400 px: ohne Untertitel, Knöpfe schmaler, damit er bei 320 px auf den Bildschirm passt und nicht umbricht */
+        @media (max-width: 400px) {
+            .dw-kopf > div { padding-top: 8px; padding-bottom: 8px; gap: 6px; }
+            .dw-kopf [data-i18n="app.subtitle"] { display: none; }
+            .dw-kopf > div > :first-child, .dw-kopf > div > :first-child > div:last-child { min-width: 0; }
+            .dw-kopf #active-storage-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+            .dw-kopf-knoepfe { gap: 4px; flex: none; }
+            .dw-kopf-knoepfe > button { width: 52px; height: 44px; }
+            .dw-kopf-knoepfe > button:last-child { width: 44px; }
+        }
+
+        /* Kopf auf schmalen Bildschirmen: beim Runterscrollen weg, beim Hochscrollen wieder da (app.js, «Kopf»). */
+        .dw-kopf { transition: transform .2s ease; }
+        .dw-kopf.dw-kopf-weg { transform: translateY(-100%); }
+        @media (prefers-reduced-motion: reduce) { .dw-kopf { transition: none; } }

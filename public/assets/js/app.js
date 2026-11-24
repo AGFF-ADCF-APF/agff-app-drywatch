@@ -3851,3 +3851,34 @@
             evaporation: evaporationApi
         };
         window.DryCalcApi = window.DryWatchApi;
+
+        // Kopf: auf schmalen Bildschirmen beim Runterscrollen ausblenden, beim Hochscrollen wieder zeigen (CSS .dw-kopf-weg).
+        // Eingebettet (iframe, z. B. graswachstum.ch/werkzeuge/drywatch) meldet die App dem Rahmen die Scrollposition, damit er
+        // seinen Kopf gleich behandeln kann. Gemeldet wird nur die Zahl, nichts aus den Eingaben.
+        (function () {
+            const kopf = document.getElementById('dw-kopf');
+            const schmal = window.matchMedia('(max-width: 640px)');
+            let eingebettet = false;
+            try { eingebettet = window.self !== window.top; } catch (e) { eingebettet = true; }
+            if (eingebettet) document.documentElement.classList.add('dw-eingebettet');
+            let letztes = window.scrollY, geplant = false;
+            function pruefen() {
+                geplant = false;
+                const y = Math.max(0, window.scrollY);
+                const d = y - letztes;
+                if (kopf) {
+                    if (!schmal.matches || y < kopf.offsetHeight) kopf.classList.remove('dw-kopf-weg');
+                    else if (d > 6) kopf.classList.add('dw-kopf-weg');
+                    else if (d < -6) kopf.classList.remove('dw-kopf-weg');
+                }
+                if (Math.abs(d) > 6 || y === 0) {
+                    if (eingebettet) window.parent.postMessage({ typ: 'werkzeug-scroll', y: Math.round(y) }, '*');
+                    letztes = y;
+                }
+            }
+            window.addEventListener('scroll', function () {
+                if (!geplant) { geplant = true; requestAnimationFrame(pruefen); }
+            }, { passive: true });
+            // Fokus mit der Tastatur auf ein Element im Kopf: Kopf zeigen
+            if (kopf) kopf.addEventListener('focusin', function () { kopf.classList.remove('dw-kopf-weg'); });
+        })();

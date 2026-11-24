@@ -1,5 +1,5 @@
 
-    <div class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+    <div id="dw-kopf" class="dw-kopf bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
         <div class="max-w-3xl mx-auto px-3 py-3 flex justify-between items-center">
             <div class="flex items-center gap-2">
                 <div class="bg-blue-600 text-white p-1.5 rounded-lg"><i data-lucide="wind" width="20" height="20"></i></div>
@@ -12,7 +12,7 @@
                     </div>
                 </div>
             </div>
-            <div class="flex gap-2">
+            <div class="dw-kopf-knoepfe flex gap-2">
                 <button onclick="openHeucheckModal('lager')" class="flex flex-col items-center justify-center w-16 h-10 bg-emerald-50 border border-emerald-100 rounded-lg text-emerald-700 active:bg-emerald-100"><i data-lucide="house" width="18"></i><span class="text-[7px] font-bold leading-none text-center" data-i18n="nav.fodder">Futterlager</span></button>
                 <button onclick="openDialogById('phases-modal')" class="flex flex-col items-center justify-center w-16 h-10 bg-blue-50 border border-blue-100 rounded-lg text-blue-700 active:bg-blue-100"><i data-lucide="badge-info" width="14" height="14"></i><span class="text-[7px] font-bold leading-none text-center" data-i18n="nav.info">Info&amp;Wissen</span></button>
                 <button onclick="openSettingsModal()" class="flex flex-col items-center justify-center w-10 h-10 bg-slate-50 border rounded-lg text-slate-600 active:bg-slate-200"><i data-lucide="settings" width="18"></i></button>
@@ -30,7 +30,7 @@
                 </div>
                 <i data-lucide="gauge" width="16" class="text-cyan-500"></i>
             </div>
-            <div class="mt-2 flex items-center gap-1 overflow-x-auto whitespace-nowrap pb-1">
+            <div class="luftmenge-zeile mt-2 flex items-center gap-1 overflow-x-auto whitespace-nowrap pb-1">
                     <div class="text-center px-1 shrink-0">
                         <div id="flow-total" class="text-3xl font-black text-cyan-700 leading-none">0.0</div>
                         <div class="text-xs text-slate-400 font-bold mt-0.5">m³/s</div>
@@ -75,7 +75,7 @@
                     <i data-lucide="thermometer" width="16" class="text-slate-400"></i>
                 </div>
             </div>
-            <div id="guide-aussen-block" class="flex items-center justify-between gap-1">
+            <div id="guide-aussen-block" class="luft-zeile flex items-center justify-between gap-1">
                 <div class="w-16 shrink-0"><div class="text-[9px] text-slate-500 font-bold uppercase tracking-wide" data-i18n="air.outside">Aussen</div><button id="fetch-weather" class="w-full h-10 flex flex-col items-center justify-center text-[9px] font-bold text-blue-600 bg-blue-50 px-1 rounded border border-blue-100"><i data-lucide="cloud-sun" width="14" height="14"></i><span class="leading-none mt-0.5" data-i18n="air.meteo_btn">Meteo</span></button></div>
                 <div class="flex items-center bg-slate-50 rounded-lg p-0.5 gap-0.5"><button class="stepper-btn" onmousedown="startStep('t1', -0.1, -1.0)" ontouchstart="startStep('t1', -0.1, -1.0)" onmouseup="stopStep()" ontouchend="stopStep()">-</button><div class="text-center"><input type="number" id="t1-in" class="val-input" value="20" onchange="manualInput('t1', this.value)"><div class="text-[9px] text-slate-400 font-bold">°C</div></div><button class="stepper-btn" onmousedown="startStep('t1', 0.1, 1.0)" ontouchstart="startStep('t1', 0.1, 1.0)" onmouseup="stopStep()" ontouchend="stopStep()">+</button></div>
                 <div class="flex items-center bg-slate-50 rounded-lg p-0.5 gap-0.5"><button class="stepper-btn" onmousedown="startStep('h1', -1, -5)" ontouchstart="startStep('h1', -1, -5)" onmouseup="stopStep()" ontouchend="stopStep()">-</button><div class="text-center"><input type="number" id="h1-in" class="val-input" value="60" onchange="manualInput('h1', this.value)"><div class="text-[9px] text-slate-400 font-bold">%</div></div><button class="stepper-btn" onmousedown="startStep('h1', 1, 5)" ontouchstart="startStep('h1', 1, 5)" onmouseup="stopStep()" ontouchend="stopStep()">+</button></div>
@@ -112,13 +112,13 @@
                     </div>
                 </div>
             </div>
-            <div id="guide-zuluft-block" class="flex items-center justify-between gap-1">
+            <div id="guide-zuluft-block" class="luft-zeile flex items-center justify-between gap-1">
                 <div class="w-16 shrink-0"><div class="text-[9px] text-amber-600 font-bold uppercase tracking-wide" data-i18n="air.supply">Zuluft</div><button id="sim-toggle-btn" onclick="toggleSimPanel()" title="Simulation aus" class="w-full h-10 flex flex-col items-center justify-center text-[9px] font-bold text-amber-700 bg-amber-50 px-1 rounded border border-amber-100 transition-colors"><i data-lucide="zap" width="14"></i><span class="leading-none mt-0.5" data-i18n="air.sim_btn">Simulation</span></button></div>
                 <div class="flex items-center bg-slate-50 rounded-lg p-0.5 gap-0.5"><button class="stepper-btn" onmousedown="startStep('t2', -0.1, -1.0)" ontouchstart="startStep('t2', -0.1, -1.0)" onmouseup="stopStep()" ontouchend="stopStep()">-</button><div class="text-center"><input type="number" id="t2-in" class="val-input" value="20" onchange="manualInput('t2', this.value)"><div class="text-[9px] text-slate-400 font-bold">°C</div></div><button class="stepper-btn" onmousedown="startStep('t2', 0.1, 1.0)" ontouchstart="startStep('t2', 0.1, 1.0)" onmouseup="stopStep()" ontouchend="stopStep()">+</button></div>
                 <div class="flex items-center bg-slate-50 rounded-lg p-0.5 gap-0.5"><button class="stepper-btn" onmousedown="startStep('h2', -1, -5)" ontouchstart="startStep('h2', -1, -5)" onmouseup="stopStep()" ontouchend="stopStep()">-</button><div class="text-center"><input type="number" id="h2-in" class="val-input" value="60" onchange="manualInput('h2', this.value)"><div class="text-[9px] text-slate-400 font-bold">%</div></div><button class="stepper-btn" onmousedown="startStep('h2', 1, 5)" ontouchstart="startStep('h2', 1, 5)" onmouseup="stopStep()" ontouchend="stopStep()">+</button></div>
             </div>
             <hr class="border-slate-100">
-            <div class="flex items-center justify-between gap-1">
+            <div class="luft-zeile flex items-center justify-between gap-1">
                 <div class="w-16 shrink-0"><div class="text-[9px] text-emerald-600 font-bold uppercase tracking-wide" data-i18n="air.exhaust">Abluft</div><label class="flex items-center gap-1"><input type="checkbox" id="check-adiabatic" class="accent-emerald-600" checked onchange="update()"><span class="text-[9px] font-bold text-slate-400">Auto</span><button onclick="openKnowledgeArticle('05-luftaufbereitung.md')" class="w-4 h-4 rounded-full border border-slate-300 flex items-center justify-center" title="Erklärung in Info & Wissen"><i data-lucide="badge-info" width="12" height="12" class="text-blue-400 cursor-pointer"></i></button></label></div>
                 <div class="flex items-center bg-slate-50 rounded-lg p-0.5 gap-0.5"><button class="stepper-btn" onmousedown="startStep('t3', -0.1, -1.0)" ontouchstart="startStep('t3', -0.1, -1.0)" onmouseup="stopStep()" ontouchend="stopStep()">-</button><div class="text-center"><input type="number" id="t3-in" class="val-input" value="15" onchange="manualInput('t3', this.value)"><div class="text-[9px] text-slate-400 font-bold">°C</div></div><button class="stepper-btn" onmousedown="startStep('t3', 0.1, 1.0)" ontouchstart="startStep('t3', 0.1, 1.0)" onmouseup="stopStep()" ontouchend="stopStep()">+</button></div>
                 <div id="h3-group" class="flex items-center bg-slate-50 rounded-lg p-0.5 gap-0.5"><button class="stepper-btn" onmousedown="startStep('h3', -1, -5)" ontouchstart="startStep('h3', -1, -5)" onmouseup="stopStep()" ontouchend="stopStep()">-</button><div class="text-center"><input type="number" id="h3-in" class="val-input" value="90" onchange="manualInput('h3', this.value)"><div class="text-[9px] text-slate-400 font-bold">%</div></div><button class="stepper-btn" onmousedown="startStep('h3', 1, 5)" ontouchstart="startStep('h3', 1, 5)" onmouseup="stopStep()" ontouchend="stopStep()">+</button></div>
@@ -314,7 +314,7 @@
                         <div id="history-storage-switcher" class="flex items-center gap-1 shrink-0"></div>
                     </div>
                 </div>
-                <div class="flex items-center gap-2">
+                <div class="flex flex-wrap items-center gap-2">
                     <div class="history-zoom-control">
                         <span class="history-zoom-label" data-i18n="history.zoom">Zoomen</span>
                         <button onclick="zoomHistory(-1)" class="history-zoom-btn" title="Zoom out">
