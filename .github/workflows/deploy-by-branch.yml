@@ -1,8 +1,9 @@
 name: Deploy By Branch
 
+# Kein automatisches Ausrollen bei Push (Entscheid Martin, 24.11.2026): Das Repo ist öffentlich, ein Self-hosted-Runner auf dem
+# Heimserver (Gruppe docker = praktisch root) wäre ein unnötiges Risiko, und ausgerollt wird ohnehin nur bewusst. Es ist kein
+# Runner registriert; ausgerollt wird von Hand im Zielordner (README «Ausrollen»). Ein Start von Hand bliebe ohne Runner liegen.
 on:
-  push:
-    branches: [staging, main]
   workflow_dispatch:
     inputs:
       target:

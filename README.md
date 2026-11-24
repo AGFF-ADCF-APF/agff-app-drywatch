@@ -163,7 +163,7 @@ Automatisierung ist vorbereitet:
 - `.github/workflows/branch-flow-guard.yml`
 - `.github/workflows/deploy-by-branch.yml`
 
-Die Deploy-Workflows laufen auf `self-hosted` Runnern.
+`deploy-by-branch.yml` startet nicht mehr bei Push (seit 24.11.2026, kein Runner registriert, siehe «Ausrollen»).
 
 ## GitHub Branch-Schutz (einmalig in GitHub klicken)
 
@@ -180,18 +180,17 @@ In GitHub beim Repo:
 
 Damit kann niemand direkt unsauber in die Ziel-Branches mergen.
 
-## Self-Hosted Runner (für Auto-Deploy)
+## Ausrollen
 
-Kurz erklärt: Der Runner ist ein kleiner Dienst auf deinem Server, der GitHub-Workflows lokal ausführt.
+Ausgerollt wird von Hand auf dem Docker-Host (LXC 103), nach dem Push auf `main`:
 
-Grobe Schritte:
+```bash
+cd /opt/stacks/agff-apps/agff-drywatch && git fetch --all --prune && git checkout main && git pull --ff-only origin main && docker compose up -d --build
+```
 
-1. GitHub: `Settings` -> `Actions` -> `Runners` -> `New self-hosted runner`
-2. Linux-Befehle von GitHub auf dem Zielserver ausführen
-3. Runner als Service installieren/starten
-4. Danach deployt GitHub automatisch:
-	- Push auf `staging` -> Staging-Deploy
-	- Push auf `main` -> Produktiv-Deploy
+Vorher das laufende Image sichern, z. B. `docker tag agff-drywatch-drycalc:latest agff-drywatch-drycalc:vor-<commit>`.
+Einen Self-hosted-Runner gibt es bewusst nicht (24.11.2026): Das Repo ist öffentlich, und ein Runner auf dem Heimserver hätte über
+die Gruppe `docker` praktisch Root-Rechte. Workflows aus Forks brauchen zudem immer eine Freigabe (Einstellung «all external contributors»).
 
 ## Rollback in 1 Minute
 
