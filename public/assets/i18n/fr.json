@@ -137,5 +137,21 @@
   "detail.x_supply": "x air soufflé",
   "detail.x_exhaust": "x air rejeté",
   "detail.dx": "Δx",
-  "detail.air_density": "Densité ρ"
+  "detail.air_density": "Densité ρ",
+  "heucheck.fan_pick": "Choisir le ventilateur",
+  "heucheck.fan_selected": "Sélectionné",
+  "heucheck.fan_search_placeholder": "Marque, modèle, kW ou m³/s",
+  "heucheck.fan_search_clear": "Effacer la recherche",
+  "heucheck.fan_list_open": "Ouvrir la liste",
+  "heucheck.fan_list_close": "Fermer la liste",
+  "heucheck.fan_all_brands": "Toutes les marques",
+  "heucheck.fan_choose_brand": "Choisir une marque – ou rechercher ci-dessus",
+  "heucheck.fan_models": "modèles",
+  "heucheck.fan_model_one": "modèle",
+  "heucheck.fan_hits": "résultats",
+  "heucheck.fan_at_pressure": "à",
+  "heucheck.fan_too_weak": "n’atteint pas",
+  "heucheck.fan_too_weak_end": "",
+  "heucheck.fan_loading": "Chargement de la liste des ventilateurs …",
+  "heucheck.fan_no_hits": "Aucun ventilateur trouvé. Exemples : «Sumag», «7.5 kW», «12 m3/s»."
 }

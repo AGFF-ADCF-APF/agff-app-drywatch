@@ -427,11 +427,24 @@
         </div>
         <div class="flex-1 overflow-y-auto bg-slate-50">
             <div id="panel-heucheck-luefter" class="p-4 space-y-4 hidden">
-                <div class="relative shrink-0 z-20">
-                    <label class="label-sm mb-1" data-i18n="common.search">Suche</label>
-                    <input id="fan-search" class="w-full border p-3 rounded-lg font-bold shadow-sm" placeholder="Modell tippen..." oninput="filterFans(this.value)" onkeydown="handleFanKey(event)">
-                    <div id="fan-results" class="search-results hidden"></div>
-                    <button onclick="resetFanSelection()" class="mt-2 px-3 py-1.5 rounded-md border border-slate-300 bg-white text-[11px] font-bold text-slate-600 hover:bg-slate-50" data-i18n="heucheck.reset_fan">Lüfter zurücksetzen</button>
+                <div id="fan-picker" class="fan-picker">
+                    <label for="fan-search" class="label-sm mb-1" data-i18n="heucheck.fan_pick">Lüfter wählen</label>
+                    <div id="fan-picker-current" class="fan-picker-current"></div>
+                    <div class="fan-picker-field">
+                        <i data-lucide="search" class="fan-picker-search-icon" aria-hidden="true"></i>
+                        <input id="fan-search" type="text" inputmode="search" enterkeyhint="search" autocomplete="off" autocorrect="off" spellcheck="false"
+                            role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="fan-picker-list"
+                            placeholder="Marke, Modell, kW oder m³/s" oninput="filterFans(this.value)" onkeydown="handleFanKey(event)" onfocus="if(!fanPicker.open) openFanPicker()">
+                        <button id="fan-search-clear" type="button" class="fan-picker-btn hidden" onclick="clearFanSearch()" aria-label="Suche leeren" data-i18n-title="heucheck.fan_search_clear" title="Suche leeren">✕</button>
+                        <button id="fan-picker-toggle" type="button" class="fan-picker-btn" onclick="toggleFanPicker()" aria-controls="fan-picker-panel" aria-expanded="false" aria-label="Liste öffnen oder schliessen" title="Liste öffnen">
+                            <i data-lucide="chevron-down" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                    <div id="fan-picker-panel" class="fan-picker-panel hidden">
+                        <div id="fan-picker-head" class="fan-picker-head" aria-live="polite"></div>
+                        <ul id="fan-picker-list" class="fan-picker-list" role="listbox" aria-label="Lüfter"></ul>
+                    </div>
+                    <button type="button" onclick="resetFanSelection()" class="mt-2 px-3 py-1.5 rounded-md border border-slate-300 bg-white text-[11px] font-bold text-slate-600 hover:bg-slate-50" data-i18n="heucheck.reset_fan">Lüfter zurücksetzen</button>
                 </div>
 
                 <details id="fan-suggestions-wrap" class="rounded-lg border border-emerald-200 bg-emerald-50/70 shadow-sm">

@@ -86,7 +86,6 @@
         };
         
         let hxChart, fanChart, historyChart, historyClimateChart;
-        let filteredFans = [], selectedFanIndex = -1;
         let areaStepTimer, areaStepDelay;
         let flowSpecStepTimer, flowSpecStepDelay;
         let historyAutoKeyLast = '';
@@ -666,7 +665,7 @@
             const langFromStorage = _normalizeLang(localStorage.getItem('agff_lang') || App.ui?.lang || _detectBrowserLang());
             await setLanguage(langFromStorage, false);
             renderStorageSwitcher();
-            const _fanSearchEl = document.getElementById('fan-search'); if(_fanSearchEl) _fanSearchEl.value = App.fan.label || ''; initCharts(); loadDefaultCSV(); update();
+            renderFanPickerCurrent(); initCharts(); loadDefaultCSV(); update();
             initGuidelineLabels();
             initHistoryUI();
             applySimToggleUi();
@@ -1090,8 +1089,8 @@
                 node.className = `fan-item rounded-md border border-slate-200 bg-white ${index === 0 ? 'border-emerald-300 bg-emerald-50/40' : ''}`;
                 node.innerHTML = fanOptionDetailsMarkup(fan);
                 node.onclick = () => {
-                    const fanSearch = document.getElementById('fan-search');
-                    if(fanSearch) fanSearch.value = fan.label;
+                    fanPicker.brand = fan.brand || null;
+                    fanPicker.open = false;
                     applyFanSelection(fan);
                 };
                 list.appendChild(node);
@@ -2319,8 +2318,7 @@
             const supplyInp = document.getElementById('inp-supply-area');
             if(intakeInp) intakeInp.value = Number.isFinite(parseFloat(App.airChannels?.intakeAreaM2)) ? parseFloat(App.airChannels.intakeAreaM2).toFixed(2) : '';
             if(supplyInp) supplyInp.value = Number.isFinite(parseFloat(App.airChannels?.supplyAreaM2)) ? parseFloat(App.airChannels.supplyAreaM2).toFixed(2) : '';
-            const fanSearch = document.getElementById('fan-search');
-            if(fanSearch) fanSearch.value = App.fan.label || '';
+            renderFanPickerCurrent();
 
             update();
             saveData();
@@ -2413,6 +2411,7 @@
             if(lagerTab) lagerTab.classList.toggle('active', !isFan && !isChannels);
             if(channelsTab) channelsTab.classList.toggle('active', isChannels);
             if(isFan) {
+                openFanPicker(true);
                 updateFanChart();
                 update();
                 return;
@@ -3400,52 +3399,328 @@
         // --- CSV & FAN MODAL ---
         function loadDefaultCSV() {
             const csvUrl = `${getDrywatchBasePath()}/607_Heuluefterliste_Bund_FAT.csv`;
-            fetch(csvUrl).then(r => r.text()).then(t => { parseCSV(t); renderFanSuggestions(); }).catch(e => { console.log('DB load failed'); });
+            fetch(csvUrl).then(r => r.text()).then(t => { parseCSV(t); renderFanSuggestions(); renderFanPicker(); }).catch(e => { console.log('DB load failed'); });
         }
-        function parseCSV(text) { App.fanDB = []; const rows = text.split('\n'); for(let i=1; i<rows.length; i++) { const c = rows[i].split(';'); if(c.length<10) continue; const labelCore = `${c[0]} ${c[3]}`.trim(); const model = c[1] ? c[1].trim() : ''; const kw = parseFloat(c[5]); const rpm = parseFloat(c[4]); const featureParts = []; if(model) featureParts.push(`Nr. ${model}`); if(Number.isFinite(kw)) featureParts.push(`${kw.toFixed(1).replace(/\.0$/, '')} kW`); if(Number.isFinite(rpm)) featureParts.push(`${Math.round(rpm)} rpm`); const suffix = featureParts.length ? ` (${featureParts.join(' | ')})` : ''; const f = { label: `${labelCore}${suffix}`, kw: kw, pmax: parseFloat(c[6]), pts: [] }; for(let p=2; p<=8; p++) { let iv=7+(p-2)*2; let ip=8+(p-2)*2; if(c[iv] && c[iv].trim()) f.pts.push({p:p, q:parseFloat(c[iv]), kw:parseFloat(c[ip])}); } App.fanDB.push(f); } }
+        function parseCSV(text) {
+            App.fanDB = [];
+            const rows = text.split(/\r?\n/);
+            for(let i = 1; i < rows.length; i++) {
+                const c = rows[i].split(';');
+                if(c.length < 10) continue;
+                const brand = (c[0] || '').trim();
+                const name = (c[3] || '').trim();
+                const model = (c[1] || '').trim();
+                const type = (c[2] || '').trim();
+                const kw = parseFloat(c[5]);
+                const rpm = parseFloat(c[4]);
+                const labelCore = `${brand} ${name}`.trim();
+                const featureParts = [];
+                if(model) featureParts.push(`Nr. ${model}`);
+                if(Number.isFinite(kw)) featureParts.push(`${kw.toFixed(1).replace(/\.0$/, '')} kW`);
+                if(Number.isFinite(rpm)) featureParts.push(`${Math.round(rpm)} rpm`);
+                const suffix = featureParts.length ? ` (${featureParts.join(' | ')})` : '';
+                const f = { label: `${labelCore}${suffix}`, brand, name, model, type, rpm, kw, pmax: parseFloat(c[6]), pts: [] };
+                for(let p = 2; p <= 8; p++) {
+                    const iv = 7 + (p - 2) * 2;
+                    const ip = 8 + (p - 2) * 2;
+                    if(c[iv] && c[iv].trim()) f.pts.push({ p: p, q: parseFloat(c[iv]), kw: parseFloat(c[ip]) });
+                }
+                f.searchText = normalizeFanText(`${brand} ${name} ${model} ${type} ${f.label}`);
+                App.fanDB.push(f);
+            }
+        }
         
         function openFanModal() {
             openHeucheckModal('luefter');
             syncFanUnitControls();
             updateFanChart();
             renderFanSuggestions();
-            setTimeout(()=>document.getElementById('fan-search').focus(),100);
+            // Focus only with a mouse/keyboard; on phones the keyboard would cover the brand list.
+            if(window.matchMedia && window.matchMedia('(pointer: fine)').matches) {
+                setTimeout(()=>document.getElementById('fan-search')?.focus(),100);
+            }
         }
         function closeFanModal() {
             closeHeucheckModal();
         }
         
-        function filterFans(txt) {
-            const list = document.getElementById('fan-results'); list.innerHTML='';
-            if(!txt) { list.classList.add('hidden'); return; }
-            filteredFans = App.fanDB.filter(f => f.label.toLowerCase().includes(txt.toLowerCase()));
-            if(filteredFans.length > 0) list.classList.remove('hidden'); else list.classList.add('hidden');
-            
-            filteredFans.forEach((f, i) => {
-                const d = document.createElement('div');
-                d.className = "fan-item " + (i===selectedFanIndex ? "active" : "");
-                d.innerHTML = fanOptionDetailsMarkup({
-                    ...f,
-                    operatingPoint: getFanOperatingPoint(f, getPressureBreakdown().totalPressureMbar),
-                    suitable: true
-                });
-                d.onclick = () => { document.getElementById('fan-search').value = f.label; applyFanSelection(f); list.classList.add('hidden'); };
-                list.appendChild(d);
+        // --- FAN PICKER ---
+        // Combobox: brand list first, then the products of one brand; free text search over brand,
+        // product name, model number and performance data (kW, m³/s, m³/h, mbar, Pa, rpm).
+        const fanPicker = { open: false, brand: null, query: '', active: -1, items: [] };
+
+        function fanEsc(value) {
+            return String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+        }
+        function fanNum(value, digits = 1) {
+            if(!Number.isFinite(value)) return '';
+            if(value !== 0 && Math.abs(value) < 1) digits = Math.max(digits, Math.abs(value) < 0.1 ? 3 : 2);
+            return value.toFixed(digits).replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '');
+        }
+        function normalizeFanText(value) {
+            return String(value ?? '').toLowerCase().replace(/³/g, '3').replace(/,/g, '.')
+                .normalize('NFD').replace(/[̀-ͯ]/g, '');
+        }
+        function getFanBrands() {
+            const map = new Map();
+            (App.fanDB || []).forEach(f => {
+                const key = f.brand || '-';
+                if(!map.has(key)) map.set(key, { name: key, count: 0, kwMin: Infinity, kwMax: -Infinity });
+                const b = map.get(key);
+                b.count++;
+                if(Number.isFinite(f.kw)) { b.kwMin = Math.min(b.kwMin, f.kw); b.kwMax = Math.max(b.kwMax, f.kw); }
             });
+            return [...map.values()].sort((a, b) => a.name.localeCompare(b.name, 'de'));
+        }
+        function parseFanQuery(raw) {
+            const units = { 'kw': 'kw', 'm3/s': 'flow', 'm3s': 'flow', 'm3': 'flow', 'm3/h': 'flowh', 'm3h': 'flowh',
+                'mbar': 'mbar', 'pa': 'pa', 'rpm': 'rpm', 'u/min': 'rpm', 'upm': 'rpm', 'min-1': 'rpm' };
+            const numbers = [];
+            const rest = normalizeFanText(raw).replace(
+                /(^|[^a-z0-9.])(\d+(?:\.\d+)?)\s*(kw|m3\s*\/\s*s|m3s|m3\s*\/\s*h|m3h|m3|mbar|pa|rpm|u\s*\/\s*min|upm|min-1)?(?![a-z0-9])/g,
+                (match, lead, num, unit) => {
+                    const decimals = (num.split('.')[1] || '').length;
+                    let kind = unit ? units[unit.replace(/\s+/g, '')] : 'any';
+                    let value = parseFloat(num);
+                    let tol = 0.5 * Math.pow(10, -decimals);
+                    if(kind === 'flowh') { kind = 'flow'; value /= 3600; tol /= 3600; tol = Math.max(tol, 0.05); }
+                    if(kind === 'pa') { kind = 'mbar'; value /= 100; tol = Math.max(tol / 100, 0.05); }
+                    numbers.push({ kind, value, tol, text: num });
+                    return `${lead} `;
+                });
+            const words = rest.split(/\s+/).map(w => w.trim()).filter(Boolean);
+            return { words, numbers };
+        }
+        function fanMatchesNumber(f, n) {
+            const near = v => Number.isFinite(v) && Math.abs(v - n.value) <= n.tol + 1e-9;
+            const flows = (f.pts || []).map(pt => pt.q).filter(Number.isFinite);
+            if(n.kind === 'kw') return near(f.kw);
+            if(n.kind === 'mbar') return Number.isFinite(f.pmax) && f.pmax >= n.value - n.tol;
+            if(n.kind === 'rpm') return Number.isFinite(f.rpm) && Math.abs(f.rpm - n.value) <= Math.max(n.tol, n.value * 0.02);
+            if(n.kind === 'flow') {
+                if(!flows.length) return false;
+                return n.value >= Math.min(...flows) - n.tol && n.value <= Math.max(...flows) + n.tol;
+            }
+            return f.searchText.includes(n.text) || near(f.kw) || near(f.pmax) || flows.some(near);
+        }
+        function getFanPickerItems() {
+            const db = Array.isArray(App.fanDB) ? App.fanDB : [];
+            const query = fanPicker.query.trim();
+            const items = [];
+            if(!query) {
+                if(!fanPicker.brand) {
+                    getFanBrands().forEach(b => items.push({ kind: 'brand', brand: b }));
+                    return items;
+                }
+                items.push({ kind: 'back' });
+                db.filter(f => f.brand === fanPicker.brand)
+                    .sort((a, b) => (a.kw || 0) - (b.kw || 0) || (a.pmax || 0) - (b.pmax || 0))
+                    .forEach(f => items.push({ kind: 'fan', fan: f }));
+                return items;
+            }
+            const q = parseFanQuery(query);
+            if(!q.numbers.length) {
+                getFanBrands()
+                    .filter(b => q.words.every(w => normalizeFanText(b.name).includes(w)))
+                    .forEach(b => items.push({ kind: 'brand', brand: b }));
+            }
+            // A flow query ("12 m3/s") lists first the fans closest to that flow at the current pressure demand.
+            const flowQuery = q.numbers.find(n => n.kind === 'flow');
+            const pressureMbar = flowQuery ? getPressureBreakdown().totalPressureMbar : 0;
+            const flowGap = f => {
+                const point = getFanOperatingPoint(f, pressureMbar);
+                return point.supported ? Math.abs(point.flow - flowQuery.value) : Number.POSITIVE_INFINITY;
+            };
+            db.filter(f => q.words.every(w => f.searchText.includes(w))
+                    && q.numbers.every(n => fanMatchesNumber(f, n)))
+                .map(f => ({ f, gap: flowQuery && pressureMbar > 0 ? flowGap(f) : 0 }))
+                .sort((a, b) => (a.gap - b.gap) || (q.numbers.length
+                    ? (a.f.kw || 0) - (b.f.kw || 0) || a.f.brand.localeCompare(b.f.brand, 'de')
+                    : a.f.brand.localeCompare(b.f.brand, 'de') || (a.f.kw || 0) - (b.f.kw || 0)))
+                .map(x => x.f)
+                .forEach(f => items.push({ kind: 'fan', fan: f }));
+            return items;
+        }
+        function fanPickerOptionMarkup(item, pressureMbar) {
+            if(item.kind === 'back') {
+                return `<span class="fan-opt-icon" aria-hidden="true">‹</span><span class="fan-opt-main"><span class="fan-opt-title">${fanEsc(t('heucheck.fan_all_brands', 'Alle Marken'))}</span></span>`;
+            }
+            if(item.kind === 'brand') {
+                const b = item.brand;
+                const kwRange = Number.isFinite(b.kwMin)
+                    ? (b.kwMin === b.kwMax ? `${fanNum(b.kwMin)} kW` : `${fanNum(b.kwMin)}–${fanNum(b.kwMax)} kW`)
+                    : '';
+                const count = `${b.count} ${b.count === 1 ? t('heucheck.fan_model_one', 'Modell') : t('heucheck.fan_models', 'Modelle')}`;
+                return `<span class="fan-opt-main"><span class="fan-opt-title">${fanEsc(b.name)}</span>
+                    <span class="fan-opt-data">${fanEsc([count, kwRange].filter(Boolean).join(' · '))}</span></span>
+                    <span class="fan-opt-icon" aria-hidden="true">›</span>`;
+            }
+            const f = item.fan;
+            const flows = (f.pts || []).map(pt => pt.q).filter(Number.isFinite);
+            const title = [f.name, f.model && f.model !== '0' ? `Nr. ${f.model}` : ''].filter(Boolean).join(' · ');
+            const data = [];
+            if(Number.isFinite(f.kw)) data.push(`<b>${fanNum(f.kw)} kW</b>`);
+            if(flows.length) {
+                const qMin = fanNum(Math.min(...flows)), qMax = fanNum(Math.max(...flows));
+                data.push(`${qMin === qMax ? qMin : `${qMin}–${qMax}`} m³/s`);
+            }
+            if(Number.isFinite(f.pmax)) data.push(`${t('heucheck.max_pressure', 'Pmax')} ${fanNum(f.pmax)} mbar`);
+            if(Number.isFinite(f.rpm) && f.rpm >= 100) data.push(`${Math.round(f.rpm)} rpm`);
+            let op = '';
+            if(pressureMbar > 0) {
+                const point = getFanOperatingPoint(f, pressureMbar);
+                op = point.supported
+                    ? `<span class="fan-opt-op">${fanEsc(t('heucheck.fan_at_pressure', 'bei'))} ${fanNum(pressureMbar)} mbar: ${fanNum(point.flow)} m³/s${point.power > 0 ? `, ${fanNum(point.power)} kW` : ''}</span>`
+                    : `<span class="fan-opt-op is-warn">${fanEsc(t('heucheck.fan_too_weak', 'schafft'))} ${fanNum(pressureMbar)} mbar ${fanEsc(t('heucheck.fan_too_weak_end', 'nicht'))}</span>`;
+            }
+            const brandLine = fanPicker.query.trim() ? `<span class="fan-opt-brand">${fanEsc(f.brand)}</span>` : '';
+            const selected = App.fan.label === f.label ? '<span class="fan-opt-icon is-check" aria-hidden="true">✓</span>' : '';
+            return `<span class="fan-opt-main">${brandLine}<span class="fan-opt-title">${fanEsc(title)}</span>
+                <span class="fan-opt-data">${data.join(' · ')}</span>${op}</span>${selected}`;
+        }
+        function renderFanPickerCurrent() {
+            const el = document.getElementById('fan-picker-current');
+            if(!el) return;
+            el.innerHTML = `<span class="fan-picker-current-label">${fanEsc(t('heucheck.fan_selected', 'Gewählt'))}:</span> <b>${fanEsc(App.fan.label || 'Standard')}</b>`;
+        }
+        function renderFanPicker() {
+            const input = document.getElementById('fan-search');
+            const panel = document.getElementById('fan-picker-panel');
+            const list = document.getElementById('fan-picker-list');
+            const head = document.getElementById('fan-picker-head');
+            const toggle = document.getElementById('fan-picker-toggle');
+            const clear = document.getElementById('fan-search-clear');
+            if(!input || !panel || !list || !head) return;
+            renderFanPickerCurrent();
+            input.placeholder = t('heucheck.fan_search_placeholder', 'Marke, Modell, kW oder m³/s');
+            if(clear) clear.classList.toggle('hidden', !fanPicker.query);
+            input.setAttribute('aria-expanded', fanPicker.open ? 'true' : 'false');
+            if(toggle) {
+                toggle.setAttribute('aria-expanded', fanPicker.open ? 'true' : 'false');
+                toggle.title = fanPicker.open ? t('heucheck.fan_list_close', 'Liste schliessen') : t('heucheck.fan_list_open', 'Liste öffnen');
+            }
+            panel.classList.toggle('hidden', !fanPicker.open);
+            if(!fanPicker.open) { input.removeAttribute('aria-activedescendant'); return; }
+
+            fanPicker.items = getFanPickerItems();
+            if(fanPicker.active >= fanPicker.items.length) fanPicker.active = fanPicker.items.length - 1;
+            const fanCount = fanPicker.items.filter(i => i.kind === 'fan').length;
+            const query = fanPicker.query.trim();
+            if(!(App.fanDB || []).length) head.innerText = t('heucheck.fan_loading', 'Lüfterliste wird geladen …');
+            else if(query) head.innerHTML = `${fanCount} ${fanEsc(t('heucheck.fan_hits', 'Treffer'))}`;
+            else if(fanPicker.brand) head.innerHTML = `<b>${fanEsc(fanPicker.brand)}</b> · ${fanCount} ${fanEsc(fanCount === 1 ? t('heucheck.fan_model_one', 'Modell') : t('heucheck.fan_models', 'Modelle'))}`;
+            else head.innerText = t('heucheck.fan_choose_brand', 'Marke wählen');
+
+            const pressureMbar = getPressureBreakdown().totalPressureMbar;
+            list.innerHTML = '';
+            if(!fanPicker.items.length || (query && !fanCount && !fanPicker.items.some(i => i.kind === 'brand'))) {
+                const empty = document.createElement('li');
+                empty.className = 'fan-opt-empty';
+                empty.innerText = t('heucheck.fan_no_hits', 'Kein Lüfter gefunden. Beispiele: «Sumag», «7.5 kW», «12 m3/s».');
+                list.appendChild(empty);
+            }
+            fanPicker.items.forEach((item, i) => {
+                const li = document.createElement('li');
+                li.id = `fan-opt-${i}`;
+                li.setAttribute('role', 'option');
+                li.className = `fan-opt fan-opt--${item.kind}` + (i === fanPicker.active ? ' active' : '')
+                    + (item.kind === 'fan' && App.fan.label === item.fan.label ? ' selected' : '');
+                li.setAttribute('aria-selected', i === fanPicker.active ? 'true' : 'false');
+                li.innerHTML = fanPickerOptionMarkup(item, pressureMbar);
+                li.addEventListener('mousedown', e => e.preventDefault());
+                li.addEventListener('click', () => activateFanPickerItem(i));
+                list.appendChild(li);
+            });
+            if(fanPicker.active >= 0) {
+                input.setAttribute('aria-activedescendant', `fan-opt-${fanPicker.active}`);
+                document.getElementById(`fan-opt-${fanPicker.active}`)?.scrollIntoView({ block: 'nearest' });
+            } else {
+                input.removeAttribute('aria-activedescendant');
+            }
+        }
+        function openFanPicker(resetToBrands = false) {
+            if(resetToBrands) { fanPicker.brand = null; fanPicker.query = ''; const input = document.getElementById('fan-search'); if(input) input.value = ''; }
+            fanPicker.open = true;
+            fanPicker.active = -1;
+            renderFanPicker();
+        }
+        function closeFanPicker() {
+            fanPicker.open = false;
+            fanPicker.active = -1;
+            renderFanPicker();
+        }
+        function toggleFanPicker() {
+            if(fanPicker.open) closeFanPicker(); else openFanPicker();
+        }
+        function setFanPickerBrand(brand) {
+            fanPicker.brand = brand;
+            fanPicker.query = '';
+            const input = document.getElementById('fan-search');
+            if(input) input.value = '';
+            fanPicker.active = -1;
+            renderFanPicker();
+            document.getElementById('fan-picker-list')?.scrollTo?.(0, 0);
+        }
+        function activateFanPickerItem(index, viaKeyboard = false) {
+            const item = fanPicker.items[index];
+            if(!item) return;
+            if(item.kind === 'back') { fanPicker.brand = null; fanPicker.active = viaKeyboard ? 0 : -1; renderFanPicker(); return; }
+            if(item.kind === 'brand') { setFanPickerBrand(item.brand.name); if(viaKeyboard && fanPicker.items.length > 1) { fanPicker.active = 1; renderFanPicker(); } return; }
+            fanPicker.brand = item.fan.brand;
+            fanPicker.query = '';
+            const input = document.getElementById('fan-search');
+            if(input) input.value = '';
+            fanPicker.open = false;
+            applyFanSelection(item.fan);
+        }
+        function filterFans(txt) {
+            fanPicker.query = txt || '';
+            fanPicker.open = true;
+            fanPicker.active = -1;
+            renderFanPicker();
+            const firstUseful = fanPicker.items.findIndex(i => i.kind !== 'back');
+            if(fanPicker.query.trim() && firstUseful >= 0) { fanPicker.active = firstUseful; renderFanPicker(); }
+        }
+        function clearFanSearch() {
+            const input = document.getElementById('fan-search');
+            if(input) { input.value = ''; input.focus(); }
+            filterFans('');
         }
         function handleFanKey(e) {
-            const list = document.getElementById('fan-results');
-            if(list.classList.contains('hidden')) return;
-            if(e.key === 'ArrowDown') { selectedFanIndex = Math.min(selectedFanIndex+1, filteredFans.length-1); e.preventDefault(); }
-            if(e.key === 'ArrowUp') { selectedFanIndex = Math.max(0, selectedFanIndex-1); e.preventDefault(); }
-            if(e.key === 'Enter' && selectedFanIndex >= 0) { document.getElementById('fan-search').value = filteredFans[selectedFanIndex].label; applyFanSelection(filteredFans[selectedFanIndex]); list.classList.add('hidden'); e.preventDefault(); }
-            renderFanList();
-        }
-        function renderFanList() {
-            const rows = document.getElementById('fan-results').children;
-            for(let i=0; i<rows.length; i++) {
-                rows[i].className = "fan-item " + (i===selectedFanIndex ? "active" : "");
-                if(i===selectedFanIndex) rows[i].scrollIntoView({block:'nearest'});
+            const count = fanPicker.items.length;
+            if(e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                if(!fanPicker.open) { openFanPicker(); }
+                if(!fanPicker.items.length) return;
+                const step = e.key === 'ArrowDown' ? 1 : -1;
+                fanPicker.active = fanPicker.active < 0
+                    ? (step > 0 ? 0 : fanPicker.items.length - 1)
+                    : Math.max(0, Math.min(fanPicker.items.length - 1, fanPicker.active + step));
+                renderFanPicker();
+                return;
+            }
+            if(e.key === 'Enter') {
+                if(!fanPicker.open) { e.preventDefault(); openFanPicker(); return; }
+                const fans = fanPicker.items.filter(i => i.kind === 'fan');
+                const index = fanPicker.active >= 0 ? fanPicker.active
+                    : (fans.length === 1 ? fanPicker.items.indexOf(fans[0]) : -1);
+                if(index >= 0 && count) { e.preventDefault(); activateFanPickerItem(index, true); }
+                return;
+            }
+            if(e.key === 'Escape') {
+                if(!fanPicker.open && !fanPicker.query) return;
+                e.preventDefault();
+                e.stopPropagation();
+                if(fanPicker.query) { clearFanSearch(); return; }
+                if(fanPicker.brand) { fanPicker.brand = null; fanPicker.active = -1; renderFanPicker(); return; }
+                closeFanPicker();
+                return;
+            }
+            if(e.key === 'Backspace' && !e.target.value && fanPicker.brand) {
+                e.preventDefault();
+                fanPicker.brand = null;
+                fanPicker.active = -1;
+                renderFanPicker();
             }
         }
         function applyFanSelection(f) {
@@ -3456,6 +3731,7 @@
             syncFanUnitControls();
             updateFanChart(); renderCurveEditor();
             renderFanSuggestions();
+            renderFanPicker();
             update();
             saveData();
         }
@@ -3478,19 +3754,21 @@
             updateFanChart();
             renderCurveEditor();
             update();
+            renderFanPickerCurrent();
             saveData();
         }
         function resetFanSelection() {
             App.fan = JSON.parse(JSON.stringify(DEFAULT_APP_STATE.fan));
             App.flags.fanConfigured = false;
-            const fanSearch = document.getElementById('fan-search');
-            if(fanSearch) fanSearch.value = App.fan.label || '';
             const customNameInput = document.getElementById('inp-custom-fan-name');
             if(customNameInput) customNameInput.value = '';
-            const fanResults = document.getElementById('fan-results');
-            if(fanResults) fanResults.classList.add('hidden');
-            selectedFanIndex = -1;
-            filteredFans = [];
+            fanPicker.brand = null;
+            fanPicker.query = '';
+            const fanSearch = document.getElementById('fan-search');
+            if(fanSearch) fanSearch.value = '';
+            fanPicker.open = true;
+            fanPicker.active = -1;
+            renderFanPicker();
             syncFanUnitControls();
             updateFanChart();
             renderCurveEditor();
